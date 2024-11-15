@@ -1,0 +1,2 @@
+ scp -r  /Users/guodayang/work/vue-code/cang-web/dist root@116.62.185.53:/root/xuanwu-test/cang-web
+
