@@ -39,3 +39,7 @@ export function getUserInfoApi(data: any) {
 export function createNode(data: any) {
   return axios.post<any>('/createNode', data);
 }
+// webApi.Post("/updateUserState", AuthWebUser(), web.UpdateUserState) // 更新用户状态
+export function updateUserState(data: any) {
+  return axios.post<any>('/updateUserState', data);
+}

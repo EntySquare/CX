@@ -29,7 +29,7 @@
                     查看详情
                   </a-button> -->
                   <a-popover>
-                    <div v-html="record.content" class="content-text"></div>
+                    <div class="content-text" v-html="record.content" ></div>
                     <template #content>
                       <div style="width: 200px" v-html="record.content"></div>
                     </template>
@@ -100,131 +100,125 @@
 </template>
 
 <script setup lang="ts">
-import {
-  createBulletin,
-  deleteBulletin,
-  getBulletinList,
-} from '@/api/announcement';
-import { Message } from '@arco-design/web-vue';
-import { computed, onMounted, ref } from 'vue';
+  import {
+    createBulletin,
+    deleteBulletin,
+    getBulletinList,
+  } from '@/api/announcement';
+  import { Message } from '@arco-design/web-vue';
+  import { computed, onMounted, ref } from 'vue';
 
-const userList = ref([]);
+  const userList = ref([]);
 
-// 查询列表
-const getTeamFormList = async () => {
-  try {
-    const res = await getBulletinList();
-    if (res.code === 0) {
-      userList.value = res.json;
+  // 查询列表
+  const getTeamFormList = async () => {
+    try {
+      const res = await getBulletinList();
+      if (res.code === 0) {
+        userList.value = res.json;
+      }
+    } catch (err) {
+      // you can report use errorHandler or other
     }
-  } catch (err) {
-    // you can report use errorHandler or other
-  }
-};
-const visible = ref(false);
-const visible1 = ref(false);
-const addOrderForm = ref({
-  content: '',
-  title: '',
-  author: '',
-});
-
-// 计算属性：将普通文本转换为富文本（HTML 格式）
-const convertedContent = computed(() => {
-  // 将换行符 \n 转为 <br> 标签
-  let text = addOrderForm.value.content.replace(/\n/g, '<br/>');
-
-  // 将多个空格转换为 HTML 中的 &nbsp;（可选）
-  text = text.replace(/ /g, '&nbsp;');
-
-  return text; // 返回富文本格式的内容
-});
-
-const handleOk = async () => {
-  // visible.value = false;
-  if (addOrderForm.value.author === '') {
-    Message.error('公告发布者不能为空');
-    return;
-  }
-
-  if (addOrderForm.value.title === '') {
-    Message.error('公告标题不能为空');
-    return;
-  }
-
-  console.log('convertedContent', convertedContent.value);
-  if (addOrderForm.value.content === '') {
-    Message.error('公告内容不能为空');
-    return;
-  }
-  // 发送请求
-  const res = await createBulletin({
-    content: convertedContent.value,
-    title: addOrderForm.value.title,
-    author: addOrderForm.value.author,
+  };
+  const visible = ref(false);
+  const visible1 = ref(false);
+  const addOrderForm = ref({
+    content: '',
+    title: '',
+    author: '',
   });
-  if (res.code === 0) {
-    Message.success('创建成功');
-    // 刷新列表
-    getTeamFormList();
-    // 关闭弹窗
+
+  // 计算属性：将普通文本转换为富文本（HTML 格式）
+  const convertedContent = computed(() => {
+    // 将换行符 \n 转为 <br> 标签
+    let text = addOrderForm.value.content.replace(/\n/g, '<br/>');
+
+    // 将多个空格转换为 HTML 中的 &nbsp;（可选）
+    text = text.replace(/ /g, '&nbsp;');
+
+    return text; // 返回富文本格式的内容
+  });
+
+  const handleOk = async () => {
+    // visible.value = false;
+    if (addOrderForm.value.author === '') {
+      Message.error('公告发布者不能为空');
+      return;
+    }
+
+    if (addOrderForm.value.title === '') {
+      Message.error('公告标题不能为空');
+      return;
+    }
+
+    if (addOrderForm.value.content === '') {
+      Message.error('公告内容不能为空');
+      return;
+    }
+    // 发送请求
+    const res = await createBulletin({
+      content: convertedContent.value,
+      title: addOrderForm.value.title,
+      author: addOrderForm.value.author,
+    });
+    if (res.code === 0) {
+      Message.success('创建成功');
+      // 刷新列表
+      getTeamFormList();
+      // 关闭弹窗
+      visible.value = false;
+      // 清空表单
+      addOrderForm.value = {
+        content: '',
+        title: '',
+        author: '',
+      };
+    } else {
+      Message.error('创建失败');
+    }
+  };
+
+  const handleCancel = () => {
     visible.value = false;
-    // 清空表单
-    addOrderForm.value = {
-      content: '',
-      title: '',
-      author: '',
-    };
-  } else {
-    Message.error('创建失败');
-  }
-};
+  };
+  const CreateBulletin = () => {
+    visible.value = true;
+  };
+  const recordID = ref();
+  const handleEditadd = (record: any) => {
+    recordID.value = record.id;
+    visible1.value = true;
+  };
+  // 删除公告
+  const handleEdit = async () => {
+    const res = await deleteBulletin({ id: recordID.value });
 
-const handleCancel = () => {
-  visible.value = false;
-};
-const CreateBulletin = () => {
-  visible.value = true;
-};
-const recordID = ref();
-const handleEditadd = (record: any) => {
-  recordID.value = record.id;
-  visible1.value = true;
-};
-// 删除公告
-const handleEdit = async (record: any) => {
-  const res = await deleteBulletin({ id: recordID.value });
-  console.log('res', res);
+    if (res.code === 0) {
+      Message.success('删除成功');
+      // 刷新列表
+      getTeamFormList();
+      // 关闭弹窗
+      visible1.value = false;
+      // 清空表单
+      recordID.value = '';
+    } else {
+      Message.error('删除失败');
+    }
+  };
 
-  if (res.code === 0) {
-    Message.success('删除成功');
-    // 刷新列表
+  onMounted(async () => {
     getTeamFormList();
-    // 关闭弹窗
-    visible1.value = false;
-    // 清空表单
-    recordID.value = '';
-  } else {
-    Message.error('删除失败');
-  }
-};
-
-const viewDetails = (record: any) => {
-  // 这里可以打开一个模态框显示完整内容
-  console.log('查看详情', record.content);
-};
-onMounted(async () => {
-  getTeamFormList();
-});
+  });
 </script>
 
 <style scoped>
-.content-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* 显示前三行 */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
+  .content-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* 显示前三行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
 </style>

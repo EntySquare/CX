@@ -68,7 +68,6 @@
   const productsList = ref([]);
   const getProductsList = async () => {
     const res = await getNodeConfigurations();
-    console.log('res', res);
     productsList.value = res.json;
   };
   onMounted(() => {

@@ -6,7 +6,7 @@
         <a-divider />
         <a-form :model="form" style="padding-right: 0px" layout="vertical">
           <a-row :gutter="16">
-            <a-col :span="12" v-for="(label, field) in formFields" :key="field">
+            <a-col v-for="(label, field) in formFields" :key="field" :span="12">
               <a-form-item :field="field" :label="label">
                 <a-input
                   v-model="form[field]"

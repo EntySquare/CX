@@ -110,11 +110,31 @@
               ></a-table-column>
 
               <a-table-column title="操作">
-                <template #cell="">
+                <template #cell="{ record }">
                   <a-space wrap>
-                    <!-- <a-button type="primary">修改</a-button>
-                    <a-button type="primary">禁止收益</a-button>
-                    <a-button type="primary">禁止提现</a-button> -->
+                    <!-- <a-button type="primary">修改</a-button> -->
+                    <a-button
+                      type="primary"
+                      @click="
+                        prohibitClick(
+                          2,
+                          record.wallet_address,
+                          record.activated_state
+                        )
+                      "
+                      >禁止收益</a-button
+                    >
+                    <a-button
+                      type="primary"
+                      @click="
+                        prohibitClick(
+                          1,
+                          record.wallet_address,
+                          record.activated_state
+                        )
+                      "
+                      >禁止提现</a-button
+                    >
                     <!-- <a-button type="primary" @click="addOrder()"
                       >添加订单</a-button
                     > -->
@@ -162,13 +182,21 @@
           </a-form-item>
         </a-form>
       </a-modal>
+      <a-modal
+        :visible="visiblep"
+        :mask-closable="false"
+        @ok="prohibit"
+        @cancel="visiblep = false"
+      >
+        是否确认要修改{{ type === 1 ? '提现' : '收益' }}
+      </a-modal>
     </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
   import { onMounted, ref } from 'vue';
-  import { createNode, getUserInfoApi } from '@/api/user';
+  import { createNode, getUserInfoApi, updateUserState } from '@/api/user';
 
   import { Message } from '@arco-design/web-vue';
 
@@ -237,6 +265,36 @@
   };
   const handleCancel = () => {
     visible.value = false;
+  };
+  const visiblep = ref(false);
+  const walletAddress = ref();
+  const type = ref();
+  const activatedState = ref('未激活');
+  const prohibitClick = (typeNum: number, wallet: string, State: string) => {
+    visiblep.value = true;
+    walletAddress.value = wallet;
+    type.value = typeNum;
+    activatedState.value = State;
+  };
+  const prohibit = () => {
+    const state = ref(true);
+    if (activatedState.value === '已激活') {
+      state.value = true;
+    } else {
+      state.value = false;
+    }
+
+    const res = updateUserState({
+      wallet_address: walletAddress.value,
+      state: state.value,
+      type: type.value,
+    });
+    if (res.code === 0) {
+      visiblep.value = false;
+      Message.success('修改成功');
+    } else {
+      Message.error('修改失败');
+    }
   };
   onMounted(async () => {
     queryUserListData();
