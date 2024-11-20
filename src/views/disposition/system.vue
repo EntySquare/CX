@@ -12,6 +12,7 @@
                   v-model="form[field]"
                   style="margin-right: 8px"
                   placeholder="please enter..."
+                  allow-clear
                 />
                 <a-button type="outline" @click="submitForm(field)"
                   >提交</a-button
@@ -61,6 +62,7 @@
   });
   const getConfigurationForm = async () => {
     try {
+      loading.value = true;
       const res = await getConfiguration({});
       // 填充表单数据，只取需要的字段
       form.value.bsc_gns_withdraw_fee_ratio =
@@ -75,6 +77,8 @@
       form.value.bsc_team_ratio = res.json.bsc_team_ratio || '';
     } catch (error) {
       Message.error('加载配置失败，请重试');
+    } finally {
+      loading.value = false;
     }
   };
   // 通用的表单提交方法
@@ -95,6 +99,7 @@
     }
 
     try {
+      loading.value = true;
       const res = await updateConfiguration({
         key: field,
         value: form.value[field],
@@ -105,6 +110,8 @@
       getConfigurationForm();
     } catch (error) {
       Message.error('提交失败，请重试');
+    } finally {
+      loading.value = false;
     }
   };
   // 格式化百分比

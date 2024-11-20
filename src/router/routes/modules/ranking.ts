@@ -17,7 +17,7 @@ const RANKING: AppRouteRecordRaw = {
       name: 'thrust',
       component: () => import('@/views/ranking/direct_thrust.vue'),
       meta: {
-        locale: '直推排行',
+        locale: '直推排名奖励',
         requiresAuth: true,
         roles: ['*'],
       },
@@ -27,7 +27,7 @@ const RANKING: AppRouteRecordRaw = {
       name: 'performance',
       component: () => import('@/views/ranking/team.vue'),
       meta: {
-        locale: '团队业绩排行',
+        locale: '团队排名奖励',
         requiresAuth: true,
         roles: ['*'],
       },

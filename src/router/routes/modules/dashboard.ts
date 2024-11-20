@@ -11,12 +11,7 @@ const DASHBOARD: AppRouteRecordRaw = {
     icon: 'icon-home',
     order: 0,
   },
-  children: [
-
-
-
-
-  ],
+  children: [],
 };
 
 export default DASHBOARD;

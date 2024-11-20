@@ -19,8 +19,10 @@
           <a-input-number
             v-model="weekNumber"
             :min="1"
-            :max="5"
+            :max="maxWeeks"
+            :disabled="!selectedMonth"
             placeholder="选择周数"
+            allow-clear
             @change="onSelectWeek"
           />
           <a-button type="primary" @click="getWithdrawalList">查询</a-button>
@@ -35,6 +37,7 @@
             :span="{ xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }"
           >
             <a-table
+              :pagination="false"
               v-model:expandedKeys="expandedKeys"
               :data="withdrawList"
               style="margin-top: 20px"
@@ -75,6 +78,19 @@
                 ></a-table-column>
               </template>
             </a-table>
+            <!-- <div style="display: flex; justify-content: flex-end">
+              <a-pagination
+                :total="totalUserInfos"
+                :current="form.page + 1"
+                :page-size="20"
+                show-total
+                @change="
+                  (current) => {
+                    handlePageChange(current);
+                  }
+                "
+              ></a-pagination>
+            </div> -->
           </a-grid-item>
         </a-grid>
       </a-card>
@@ -85,7 +101,14 @@
 <script setup lang="ts">
   import { Message, TableRowSelection } from '@arco-design/web-vue';
   import { ref } from 'vue';
-  import { startOfMonth, addWeeks, format } from 'date-fns'; // 导入 date-fns 库的日期处理方法
+  import {
+    startOfMonth,
+    addWeeks,
+    format,
+    addDays,
+    endOfMonth,
+    differenceInWeeks,
+  } from 'date-fns'; // 导入 date-fns 库的日期处理方法
   import { createRanking, getRankingList } from '@/api/ranking';
 
   const withdrawList = ref();
@@ -100,51 +123,73 @@
   const expandedKeys = ref([]);
 
   //! 时间处理相关
-  // 声明响应式变量，用于存储用户选择的月份和第几周
-  const selectedMonth = ref<Date>(); // 用户选择的月份，初始值为 null
-  const weekNumber = ref<number>(); // 用户选择的第几周，初始值为 null
+  const selectedMonth = ref<Date | undefined>(undefined); // 用户选择的月份
+  const weekNumber = ref<number | undefined>(undefined); // 用户选择的第几周
+  const maxWeeks = ref<number>(5); // 默认最大周数为 5
 
-  // 获取某个月份的第 N 周的日期范围（开始日期和结束日期）并返回秒级时间戳
+  // 计算某个月的总周数
+  const getTotalWeeksInMonth = (month: Date): number => {
+    const start = startOfMonth(month);
+    const end = endOfMonth(month);
+    return differenceInWeeks(addWeeks(end, 1), start); // 获取该月的总周数
+  };
+  // 计算某个月份的周数
+  const calculateWeeksInMonth = (month: Date) => {
+    const firstDay = startOfMonth(month); // 月份第一天
+    const lastDay = endOfMonth(month); // 月份最后一天
+
+    const weeks = [];
+    let currentWeekStart = firstDay;
+
+    while (currentWeekStart <= lastDay) {
+      // 一周结束日期为开始日期 + 6 天
+      const currentWeekEnd = addDays(currentWeekStart, 6);
+      weeks.push({
+        start: currentWeekStart,
+        end: currentWeekEnd > lastDay ? lastDay : currentWeekEnd, // 防止超过月末
+      });
+
+      // 下一周开始
+      currentWeekStart = addDays(currentWeekStart, 7);
+    }
+
+    return weeks; // 返回所有周的日期范围
+  };
+  // 当用户选择月份时触发
+  const onSelectMonth = (date: Date) => {
+    selectedMonth.value = date; // 设置选中的月份
+
+    weekNumber.value = undefined; // 重置周数选择
+    maxWeeks.value = getTotalWeeksInMonth(date); // 动态计算该月总周数
+  };
+
+  // 当用户选择周数时触发
+  const onSelectWeek = (weekNum: number | undefined) => {
+    weekNumber.value = weekNum ?? undefined; // 设置选中的周数
+  };
+
+  // 获取周数范围
   const getWeekRange = (month: Date, weekNum: number) => {
-    const startOfMonthDate = startOfMonth(month); // 获取当前月份的开始日期
-    const startOfWeek = addWeeks(startOfMonthDate, weekNum - 1); // 计算第 N 周的开始日期，通过在月份开始日期基础上加上 N-1 周
-    const endOfWeek = addWeeks(startOfWeek, 1); // 计算第 N 周的结束日期，结束日期是开始日期加一周
+    const startOfMonthDate = startOfMonth(month);
+    const startOfWeek = addWeeks(startOfMonthDate, weekNum - 1);
+    const endOfWeek = addWeeks(startOfWeek, 1);
 
-    // 获取开始和结束日期的时间戳，并转换为秒级时间戳
     const startTimestamp = Math.floor(startOfWeek.getTime() / 1000);
     const endTimestamp = Math.floor(endOfWeek.getTime() / 1000);
 
-    // 格式化日期，输出 "YYYY年MM月DD日"
     const formattedStartOfWeek = format(startOfWeek, 'yyyy年MM月dd日');
     const formattedEndOfWeek = format(endOfWeek, 'yyyy年MM月dd日');
+    console.log(
+      'formattedRange',
+      `${formattedStartOfWeek} 到 ${formattedEndOfWeek}`
+    );
 
-    // 返回格式化后的日期范围和秒级时间戳
     return {
       formattedRange: `${formattedStartOfWeek} 到 ${formattedEndOfWeek}`,
       startTimestamp,
       endTimestamp,
     };
   };
-
-  // 计算某个月份总共有多少周（ISO 8601 标准计算）
-  // const getMonthWeeks = (month: Date) => {
-  //   const start = startOfMonth(month); // 获取该月份的开始日期
-  //   const end = endOfMonth(month); // 获取该月份的结束日期
-  //   const totalWeeks = getISOWeek(end) - getISOWeek(start) + 1; // 计算该月的总周数，通过获取月份结束日期和开始日期的 ISO 周数差值
-
-  //   return totalWeeks; // 返回该月份的总周数
-  // };
-
-  // 当用户选择月份时触发的回调函数
-  const onSelectMonth = (date: Date) => {
-    selectedMonth.value = date; // 更新用户选择的月份
-  };
-
-  // 当用户选择周数时触发的回调函数
-  const onSelectWeek = (weekNum: number | undefined) => {
-    weekNumber.value = weekNum; // 更新用户选择的第几周
-  };
-
   // ! 时间处理相关
 
   // 获取列表
@@ -163,6 +208,7 @@
     );
 
     try {
+      
       const res = await getRankingList({
         start_time: startTimestamp,
         end_time: endTimestamp,
@@ -218,6 +264,7 @@
       weekNumber.value
     );
     try {
+      loading.value = true;
       // 构建请求数据
       const withdrawalHandleReq = {
         list: selectedItems.map((item: any) => {
@@ -252,6 +299,13 @@
       loading.value = false;
     }
   };
+  // const totalUserInfos = ref(0);
+  // const handlePageChange = (current: number) => {
+  //   if (current - 1 !== form.value.page) {
+  //     form.value.page = current - 1;
+  //     getWithdrawalList();
+  //   }
+  // };
   const onSelectionChange = (selectedRowKeys: TableRowSelection) => {
     selectedList.value = selectedRowKeys;
   };

@@ -4,11 +4,15 @@
       <a-card>
         <a-typography-title :heading="6">质押列表</a-typography-title>
         <a-divider />
-        <a-form :model="form" style="padding-right: 120px">
+        <a-form :model="form" style="padding-right: 120px" :pagination="false">
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item field="value3" label="订单ID" label-col-flex="">
-                <a-input v-model="form.id" placeholder="please enter..." />
+                <a-input
+                  v-model="form.id"
+                  placeholder="please enter..."
+                  allow-clear
+                />
               </a-form-item>
             </a-col>
             <a-col :span="12">
@@ -16,6 +20,7 @@
                 <a-input
                   v-model="form.wallet_address"
                   placeholder="please enter..."
+                  allow-clear
                 />
               </a-form-item>
             </a-col>
@@ -83,6 +88,19 @@
                 ></a-table-column>
               </template>
             </a-table>
+            <div style="display: flex; justify-content: flex-end">
+              <a-pagination
+                :total="totalUserInfo"
+                :current="form.page + 1"
+                :page-size="20"
+                show-total
+                @change="
+                  (current) => {
+                    handlePageChange(current);
+                  }
+                "
+              ></a-pagination>
+            </div>
           </a-grid-item>
         </a-grid>
       </a-card>
@@ -100,24 +118,35 @@
     id: '', // 用户id
     wallet_address: '', // 钱包地址
     status: '', // 订单状态 0初始 1进行中 2成功 3失败
-    page: 1, // 页码
+    page: 0, // 页码
     page_size: 10, // 每页条数
   });
-
+  const totalUserInfo = ref(0);
   const getBuyalList = async () => {
     try {
+      loading.value = true;
       const res = await getPledgeList({
         id: form.value.id === '' ? 0 : Number(form.value.id), // 用户id
         wallet_address: form.value.wallet_address, // 钱包地址
         status: form.value.status === '' ? 0 : Number(form.value.status), // 订单状态 0初始 1进行中 2成功 3失败
-        page: form.value.page, // 页码
+        page: form.value.page + 1, // 页码
         page_size: form.value.page_size, // 每页条数
       });
       if (res.code === 0) {
         BuyList.value = res.json.list;
+        totalUserInfo.value = res.json.total;
       }
     } catch (err) {
       // you can report use errorHandler or other
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handlePageChange = (current: number) => {
+    if (current - 1 !== form.value.page) {
+      form.value.page = current - 1;
+      getBuyalList();
     }
   };
   const resetForm = () => {
@@ -125,7 +154,7 @@
       id: '', // 用户id
       wallet_address: '', // 钱包地址
       status: '', // 订单状态 0初始 1进行中 2成功 3失败
-      page: 1, // 页码
+      page: 0, // 页码
       page_size: 10, // 每页条数
     };
     getBuyalList();

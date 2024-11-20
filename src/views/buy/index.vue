@@ -8,7 +8,11 @@
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item field="value3" label="用户ID" label-col-flex="">
-                <a-input v-model="form.id" placeholder="please enter..." />
+                <a-input
+                  v-model="form.id"
+                  allow-clear
+                  placeholder="please enter..."
+                />
               </a-form-item>
             </a-col>
             <a-col :span="12">
@@ -16,6 +20,7 @@
                 <a-input
                   v-model="form.wallet_address"
                   placeholder="please enter..."
+                  allow-clear
                 />
               </a-form-item>
             </a-col>
@@ -28,12 +33,7 @@
               </a-form-item>
             </a-col>
             <a-col :span="12">
-              <a-form-item
-                field="value2"
-                label="订单状态
-"
-                label-col-flex=""
-              >
+              <a-form-item field="value2" label="订单状态" label-col-flex="">
                 <a-select v-model="form.status">
                   <a-option value="1">进行中</a-option>
                   <a-option value="2">通过</a-option>
@@ -55,7 +55,11 @@
           <a-grid-item
             :span="{ xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }"
           >
-            <a-table :data="BuyList" style="margin-top: 20px">
+            <a-table
+              :data="BuyList"
+              style="margin-top: 20px"
+              :pagination="false"
+            >
               <template #columns>
                 <a-table-column title="用户ID" data-index="id"></a-table-column>
 
@@ -63,8 +67,12 @@
                 </a-table-column>
 
                 <a-table-column
-                  title="上级地址"
+                  title="状态"
                   data-index="status"
+                ></a-table-column>
+                <a-table-column
+                  title="上级地址"
+                  data-index="recommend_address"
                 ></a-table-column>
 
                 <a-table-column
@@ -103,7 +111,7 @@
                 ></a-table-column>
               </template>
             </a-table>
-            <!-- <div style="display: flex; justify-content: flex-end">
+            <div style="display: flex; justify-content: flex-end">
               <a-pagination
                 :total="totalUserInfos"
                 :current="form.page + 1"
@@ -115,7 +123,7 @@
                   }
                 "
               ></a-pagination>
-            </div> -->
+            </div>
           </a-grid-item>
         </a-grid>
       </a-card>
@@ -134,10 +142,10 @@
     wallet_address: '', // 钱包地址
     source: '', // 来源 1:合约 2:后台
     status: '', // 订单状态 // 0:初始 1:进行中 2:成功 3:失败
-    page: 1, // 页码
+    page: 0, // 页码
     page_size: 10, // 每页条数
   });
-
+  const totalUserInfos = ref(0);
   const getBuyalList = async () => {
     try {
       const res = await getNodeList({
@@ -145,14 +153,21 @@
         wallet_address: form.value.wallet_address, // 钱包地址
         source: form.value.source === '' ? 0 : Number(form.value.source), // 来源 1:合约 2:后台
         status: form.value.status === '' ? 0 : Number(form.value.status), // 订单状态 // 0:初始 1:进行中 2:成功 3:失败
-        page: form.value.page, // 页码
+        page: form.value.page + 1, // 页码
         page_size: form.value.page_size, // 每页条数
       });
       if (res.code === 0) {
         BuyList.value = res.json.list;
+        totalUserInfos.value = res.json.total_records;
       }
     } catch (err) {
       // you can report use errorHandler or other
+    }
+  };
+  const handlePageChange = (current: number) => {
+    if (current - 1 !== form.value.page) {
+      form.value.page = current - 1;
+      getBuyalList();
     }
   };
   const resetForm = () => {
@@ -161,7 +176,7 @@
       wallet_address: '', // 钱包地址
       source: '', // 来源
       status: '', // 订单状态
-      page: 1, // 页码
+      page: 0, // 页码
       page_size: 10, // 每页条数
     };
     getBuyalList();

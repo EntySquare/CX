@@ -11,15 +11,21 @@
                 <a-input
                   v-model="form.wallet_address"
                   placeholder="please enter..."
+                  allow-clear
                 />
               </a-form-item>
             </a-col>
             <a-col :span="12">
               <a-form-item field="value3" label="代币名称" label-col-flex="">
-                <a-input
+                <!-- <a-input
                   v-model="form.token_name"
                   placeholder="please enter..."
-                />
+                  allow-clear
+                /> -->
+                <a-select v-model="form.token_name">
+                  <a-option value="USDT">USDT</a-option>
+                  <a-option value="GNS">GNS</a-option>
+                </a-select>
               </a-form-item>
             </a-col>
             <a-col :span="12">
@@ -50,7 +56,11 @@
           <a-grid-item
             :span="{ xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }"
           >
-            <a-table :data="withdrawList" style="margin-top: 20px">
+            <a-table
+              :data="withdrawList"
+              style="margin-top: 20px"
+              :pagination="false"
+            >
               <template #columns>
                 <a-table-column title="用户ID" data-index="id"></a-table-column>
 
@@ -113,7 +123,7 @@
                 </a-table-column>
               </template>
             </a-table>
-            <!-- <div style="display: flex; justify-content: flex-end">
+            <div style="display: flex; justify-content: flex-end">
               <a-pagination
                 :total="totalUserInfos"
                 :current="form.page + 1"
@@ -125,7 +135,7 @@
                   }
                 "
               ></a-pagination>
-            </div> -->
+            </div>
           </a-grid-item>
         </a-grid>
         <a-modal
@@ -146,7 +156,7 @@
               field="reason"
               label="拒绝原因"
             >
-              <a-input v-model="WithdrawalStatus.reason" />
+              <a-input v-model="WithdrawalStatus.reason" allow-clear />
             </a-form-item>
           </a-form>
         </a-modal>
@@ -166,24 +176,35 @@
     wallet_address: '', // 钱包地址
     token_name: '', // 代币名称
     status: '', // 提现状态
-    page: 1, // 页码
+    page: 0, // 页码
     page_size: 10, // 每页条数
   });
-
+  const totalUserInfos = ref(0);
   const getWithdrawalList = async () => {
     try {
+      loading.value = true;
       const res = await getWithdrawalLog({
         wallet_address: form.value.wallet_address, // 钱包地址
         token_name: form.value.token_name, // 代币名称
         status: form.value.status === '' ? 0 : Number(form.value.status), // 提现状态
-        page: form.value.page, // 页码
+        page: form.value.page + 1, // 页码
         page_size: form.value.page_size, // 每页条数
       });
       if (res.code === 0) {
         withdrawList.value = res.json.list;
+        totalUserInfos.value = res.json.total;
       }
     } catch (err) {
       // 1
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handlePageChange = (current: number) => {
+    if (current - 1 !== form.value.page) {
+      form.value.page = current - 1;
+      getWithdrawalList();
     }
   };
   const resetForm = () => {
@@ -191,7 +212,7 @@
       wallet_address: '', // 钱包地址
       token_name: '', // 代币名称
       status: '', // 提现状态
-      page: 1, // 页码
+      page: 0, // 页码
       page_size: 10, // 每页条数
     };
     getWithdrawalList();

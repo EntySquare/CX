@@ -9,7 +9,7 @@ const EARNINGS: AppRouteRecordRaw = {
     locale: '配置',
     requiresAuth: true,
     icon: 'icon-user',
-    order: 7,
+    order: 9,
   },
   children: [
     {

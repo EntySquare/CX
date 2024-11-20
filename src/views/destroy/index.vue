@@ -8,7 +8,11 @@
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item field="value3" label="订单ID" label-col-flex="">
-                <a-input v-model="form.id" placeholder="please enter..." />
+                <a-input
+                  v-model="form.id"
+                  placeholder="please enter..."
+                  allow-clear
+                />
               </a-form-item>
             </a-col>
             <a-col :span="12">
@@ -16,6 +20,7 @@
                 <a-input
                   v-model="form.wallet_address"
                   placeholder="please enter..."
+                  allow-clear
                 />
               </a-form-item>
             </a-col>
@@ -33,7 +38,11 @@
           <a-grid-item
             :span="{ xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }"
           >
-            <a-table :data="BuyList" style="margin-top: 20px">
+            <a-table
+              :data="BuyList"
+              style="margin-top: 20px"
+              :pagination="false"
+            >
               <template #columns>
                 <a-table-column title="订单ID" data-index="id"></a-table-column>
 
@@ -71,9 +80,9 @@
                 ></a-table-column>
               </template>
             </a-table>
-            <!-- <div style="display: flex; justify-content: flex-end">
+            <div style="display: flex; justify-content: flex-end">
               <a-pagination
-                :total="totalUserInfos"
+                :total="totalUserInfo"
                 :current="form.page + 1"
                 :page-size="20"
                 show-total
@@ -83,7 +92,7 @@
                   }
                 "
               ></a-pagination>
-            </div> -->
+            </div>
           </a-grid-item>
         </a-grid>
       </a-card>
@@ -100,31 +109,42 @@
   const form = ref({
     id: '', // 用户ID
     wallet_address: '', // 钱包地址
-    page: 1, // 页码
+    page: 0, // 页码
     page_size: 10, // 每页条数
   });
-
+  const totalUserInfo = ref(0);
   const getBuyalList = async () => {
     try {
+      loading.value = true;
       const res = await getBurnList({
         id: form.value.id === '' ? 0 : Number(form.value.id), // 用户ID
         wallet_address: form.value.wallet_address, // 钱包地址
 
-        page: form.value.page, // 页码
+        page: form.value.page + 1, // 页码
         page_size: form.value.page_size, // 每页条数
       });
       if (res.code === 0) {
         BuyList.value = res.json.list;
+        totalUserInfo.value = res.json.total;
       }
     } catch (err) {
       // you can report use errorHandler or other
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const handlePageChange = (current: number) => {
+    if (current - 1 !== form.value.page) {
+      form.value.page = current - 1;
+      getBuyalList();
     }
   };
   const resetForm = () => {
     form.value = {
       id: '', // 用户ID
       wallet_address: '', // 钱包地址
-      page: 1, // 页码
+      page: 0, // 页码
       page_size: 10, // 每页条数
     };
     getBuyalList();
