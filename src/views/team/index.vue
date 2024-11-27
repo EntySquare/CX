@@ -92,12 +92,12 @@
                 ></a-table-column>
 
                 <a-table-column
-                  title="社区业绩"
+                  title="小区业绩"
                   data-index="community_performance"
                 ></a-table-column>
 
                 <a-table-column
-                  title="社区算力"
+                  title="小区算力"
                   data-index="community_power"
                 ></a-table-column>
               </template>
