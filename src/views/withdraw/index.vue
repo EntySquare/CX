@@ -62,7 +62,7 @@
               :pagination="false"
             >
               <template #columns>
-                <a-table-column title="用户ID" data-index="id"></a-table-column>
+                <!-- <a-table-column title="用户ID" data-index="id"></a-table-column> -->
 
                 <a-table-column title="钱包地址" data-index="wallet_address">
                 </a-table-column>
@@ -79,7 +79,7 @@
 
                 <a-table-column
                   title="手续费"
-                  data-index="recommend_address"
+                  data-index="fee_amount"
                 ></a-table-column>
 
                 <a-table-column
